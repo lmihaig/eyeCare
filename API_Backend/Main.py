@@ -8,8 +8,6 @@ print(__name__)
 
 @app.route("/api/add_job", methods=["POST", ])
 def fname():
-    print("files", request.files)
-    print('file' in request.files, upload_file_name in request.files)
     if 'file' not in request.files:
         return "WRONGEST"
 

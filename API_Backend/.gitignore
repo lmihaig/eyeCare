@@ -1,3 +1,7 @@
 
 # python cache
 **/__pycache__/**
+
+# uploads:
+uploaded/**
+!uploaded/.gitkeep
