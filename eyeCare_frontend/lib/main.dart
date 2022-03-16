@@ -50,7 +50,9 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future uploadImage(File? image) async {
-    var uri = Uri.parse('http://sima.zapto.org:8081/api/add_job');
+    // 8081 is MY Burp port
+    // 8008 is the real port
+    var uri = Uri.parse('http://sima.zapto.org:8008/api/add_job');
     Map<String, String> headers = {"user": "muie_sima"};
 
     var request = http.MultipartRequest("POST", uri);
