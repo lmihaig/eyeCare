@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -34,6 +35,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   File? image;
+  Map<String, dynamic>? responseBody;
 
   Future chooseImage(ImageSource source) async {
     try {
@@ -50,15 +52,12 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future uploadImage(File? image) async {
-    // 8081 is MY Burp port
-    // 8008 is the real port
-    var uri = Uri.parse('http://sima.zapto.org:8008/api/add_job');
-    Map<String, String> headers = {"user": "muie_sima"};
-
+    var uri = Uri.parse('http://date.jsontest.com/');
     var request = http.MultipartRequest("POST", uri);
-    request.headers.addAll(headers);
 
-    request.fields["parola"] = "sima_muie";
+    // Map<String, String> headers = {"user": "muie_sima"};
+    // request.headers.addAll(headers);
+    // request.fields["parola"] = "sima_muie";
 
     request.files.add(http.MultipartFile.fromBytes(
         "file", image!.readAsBytesSync(),
@@ -68,7 +67,36 @@ class _MainPageState extends State<MainPage> {
         await http.Response.fromStream(await request.send());
     print("Result: ${response.statusCode}");
     print("Body: ${response.body}");
+
+    setState(() => responseBody = jsonDecode(response.body));
+    print(responseBody);
   }
+
+  Future<String> parseResponse() async {
+    if (responseBody == null) return "lmao";
+    String parsedResponse = "";
+    for (String key in responseBody!.keys) {
+      parsedResponse +=
+          // key + " Confidence: " + responseBody![key].toString() + "\n";
+          key + responseBody![key].toString();
+      // "Boala" + "\tConfidence: " + "numar\n";
+    }
+    return parsedResponse;
+  }
+
+  Widget displayResponse({required String responseText}) => Text(
+        responseText,
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+          // background: Paint()
+          //   ..strokeWidth = 17
+          //   ..color = Colors.blue
+          //   ..strokeJoin = StrokeJoin.round
+          //   ..strokeCap = StrokeCap.round
+          //   ..style = PaintingStyle.stroke,
+        ),
+      );
 
   Widget fancyButton(
           {required String title,
@@ -78,15 +106,15 @@ class _MainPageState extends State<MainPage> {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           shape: const StadiumBorder(),
-          maximumSize: const Size.fromHeight(56),
+          maximumSize: const Size.fromHeight(64),
           primary: Colors.white,
           onPrimary: Colors.black,
-          textStyle: const TextStyle(fontSize: 20),
+          textStyle: const TextStyle(fontSize: 24),
         ),
         child: Row(
           children: [
             Icon(icon, size: 28),
-            const SizedBox(width: 16),
+            const SizedBox(width: 18),
             Text(title)
           ],
         ),
@@ -101,22 +129,35 @@ class _MainPageState extends State<MainPage> {
         child: Column(
           children: [
             if (image != null) ...[
-              Image.file(
-                image!,
+              Container(
                 width: MediaQuery.of(context).size.width * 0.7,
-                height: MediaQuery.of(context).size.height * 0.7,
-                fit: BoxFit.cover,
+                height: MediaQuery.of(context).size.height * 0.35,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: FileImage(image!),
+                    fit: BoxFit.cover,
+                  ),
+                  borderRadius: const BorderRadius.all(Radius.circular(50.0)),
+                  border: Border.all(
+                    color: const Color.fromARGB(255, 25, 80, 80),
+                    width: 4.0,
+                  ),
+                ),
               ),
               const SizedBox(
                 height: 24,
               ),
-              const Text(
-                'AI CANCER LA OCHI',
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              FutureBuilder(
+                  future: parseResponse(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done &&
+                        snapshot.data as String != "lmao") {
+                      return displayResponse(
+                          responseText: snapshot.data as String);
+                    } else {
+                      return const CircularProgressIndicator();
+                    }
+                  }),
             ] else ...[
               const FlutterLogo(size: 300),
             ],
