@@ -73,12 +73,14 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<String> parseResponse() async {
-    if (responseBody == null) return "lmao";
+    while (responseBody == null) {
+      await Future.delayed(const Duration(seconds: 1));
+    }
     String parsedResponse = "";
     for (String key in responseBody!.keys) {
       parsedResponse +=
-          // key + " Confidence: " + responseBody![key].toString() + "\n";
-          key + responseBody![key].toString();
+          key + " Confidence: " + responseBody![key].toString() + "\n";
+      // key + responseBody![key].toString();
       // "Boala" + "\tConfidence: " + "numar\n";
     }
     return parsedResponse;
@@ -150,8 +152,7 @@ class _MainPageState extends State<MainPage> {
               FutureBuilder(
                   future: parseResponse(),
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.done &&
-                        snapshot.data as String != "lmao") {
+                    if (snapshot.connectionState == ConnectionState.done) {
                       return displayResponse(
                           responseText: snapshot.data as String);
                     } else {
