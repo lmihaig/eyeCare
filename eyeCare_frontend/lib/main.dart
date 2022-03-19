@@ -49,7 +49,13 @@ class _MainPageState extends State<MainPage> {
       if (image == null) return;
 
       final imageTemp = File(image.path);
-      setState(() => this.image = imageTemp);
+      setState(() {
+        responseBody = null;
+        job_info = null;
+        job_status = null;
+        this.image = imageTemp;
+      });
+      // setState(() => this.image = imageTemp);
       uploadImage(this.image);
     } on PlatformException catch (e) {
       print("Failed to choose image: $e");
@@ -59,6 +65,7 @@ class _MainPageState extends State<MainPage> {
   Future uploadImage(File? image) async {
     var uri = Uri.parse('http://sima.zapto.org:8081/api/add_job');
     var request = http.MultipartRequest("POST", uri);
+    var client = http.Client();
 
     // Map<String, String> headers = {"user": "muie_sima"};
     // request.headers.addAll(headers);
@@ -84,7 +91,7 @@ class _MainPageState extends State<MainPage> {
     dynamic json_body;
     do {
       await Future.delayed(const Duration(milliseconds: 50));
-      response = await http.get(uri);
+      response = await client.get(uri);
       json_body = jsonDecode(response.body);
     } while (json_body!['status'] != 'DONE');
 
@@ -92,7 +99,19 @@ class _MainPageState extends State<MainPage> {
     uri = Uri.parse('http://sima.zapto.org:8081/api/get_result/' +
         job_info!['job_id'].toString());
     print("B");
-    response = await http.get(uri);
+
+    // JEGMANEALA, NU MA BATE PLZ  -Sima(CristiSima@git)
+    bool get_ok;
+    do {
+      try {
+        response = await client.get(uri);
+        get_ok = true;
+      } catch (e) {
+        print("Fail 1");
+        get_ok = false;
+      }
+    } while (!get_ok);
+
     print("C");
     print(this.image);
     print(this.image?.lastAccessedSync().toString());
