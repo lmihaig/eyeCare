@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:file/memory.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+// import 'package:file/file.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,6 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -36,6 +39,8 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   File? image;
   Map<String, dynamic>? responseBody;
+  Map<String, dynamic>? job_info;
+  Map<String, dynamic>? job_status;
 
   Future chooseImage(ImageSource source) async {
     try {
@@ -52,7 +57,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future uploadImage(File? image) async {
-    var uri = Uri.parse('http://date.jsontest.com/');
+    var uri = Uri.parse('http://sima.zapto.org:8081/api/add_job');
     var request = http.MultipartRequest("POST", uri);
 
     // Map<String, String> headers = {"user": "muie_sima"};
@@ -68,36 +73,85 @@ class _MainPageState extends State<MainPage> {
     print("Result: ${response.statusCode}");
     print("Body: ${response.body}");
 
-    setState(() => responseBody = jsonDecode(response.body));
-    print(responseBody);
+    job_info = jsonDecode(response.body);
+    print(job_info);
+
+    uri = Uri.parse('http://sima.zapto.org:8081/api/get_job/' +
+        job_info!['job_id'].toString());
+
+    print("9");
+
+    dynamic json_body;
+    do {
+      await Future.delayed(const Duration(milliseconds: 50));
+      response = await http.get(uri);
+      json_body = jsonDecode(response.body);
+    } while (json_body!['status'] != 'DONE');
+
+    print("A");
+    uri = Uri.parse('http://sima.zapto.org:8081/api/get_result/' +
+        job_info!['job_id'].toString());
+    print("B");
+    response = await http.get(uri);
+    print("C");
+    print(this.image);
+    print(this.image?.lastAccessedSync().toString());
+    image = MemoryFileSystem().file('test.dart');
+    image.writeAsBytesSync(response.bodyBytes);
+    print("D");
+    setState(() {
+      job_status = json_body;
+      this.image = image;
+    });
+    print("E");
+    print(this.image?.lastAccessedSync().toString());
   }
 
   Future<String> parseResponse() async {
-    while (responseBody == null) {
+    while (job_info == null) {
       await Future.delayed(const Duration(seconds: 1));
     }
     String parsedResponse = "";
-    for (String key in responseBody!.keys) {
-      parsedResponse +=
-          key + " Confidence: " + responseBody![key].toString() + "\n";
-      // key + responseBody![key].toString();
-      // "Boala" + "\tConfidence: " + "numar\n";
+    for (String key in job_info!.keys) {
+      // parsedResponse +=  key + " Confidence: " + responseBody![key].toString() + "\n";
     }
+    parsedResponse += "Possible affections:\nNone";
     return parsedResponse;
   }
 
-  Widget displayResponse({required String responseText}) => Text(
-        responseText,
-        style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          // background: Paint()
-          //   ..strokeWidth = 17
-          //   ..color = Colors.blue
-          //   ..strokeJoin = StrokeJoin.round
-          //   ..strokeCap = StrokeCap.round
-          //   ..style = PaintingStyle.stroke,
-        ),
+  // Widget displayResponse({required String responseText}) => Text(
+  //       responseText,
+  //       textAlign: TextAlign.center,
+  //       style: TextStyle(
+  //         fontSize: 28,
+  //         fontWeight: FontWeight.bold,
+
+  //         // background: Paint()
+  //         //   ..strokeWidth = 17
+  //         //   ..color = Colors.blue
+  //         //   ..strokeJoin = StrokeJoin.round
+  //         //   ..strokeCap = StrokeCap.round
+  //         //   ..style = PaintingStyle.stroke,
+  //       ),
+  //     );
+
+  Widget displayResponse({required String responseText}) => RichText(
+        textAlign: TextAlign.center,
+        text: const TextSpan(children: <TextSpan>[
+          TextSpan(
+              text: "Possible affections:\n",
+              style: TextStyle(
+                color: Color.fromARGB(255, 0, 53, 84),
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              )),
+          TextSpan(
+              text: "None",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold)),
+        ]),
       );
 
   Widget fancyButton(
@@ -109,8 +163,8 @@ class _MainPageState extends State<MainPage> {
         style: ElevatedButton.styleFrom(
           shape: const StadiumBorder(),
           maximumSize: const Size.fromHeight(64),
-          primary: Colors.white,
-          onPrimary: Colors.black,
+          primary: const Color.fromARGB(255, 0, 53, 84),
+          onPrimary: Colors.white,
           textStyle: const TextStyle(fontSize: 24),
         ),
         child: Row(
@@ -131,6 +185,9 @@ class _MainPageState extends State<MainPage> {
         child: Column(
           children: [
             if (image != null) ...[
+              const SizedBox(
+                height: 24,
+              ),
               Container(
                 width: MediaQuery.of(context).size.width * 0.7,
                 height: MediaQuery.of(context).size.height * 0.35,
@@ -141,14 +198,12 @@ class _MainPageState extends State<MainPage> {
                   ),
                   borderRadius: const BorderRadius.all(Radius.circular(50.0)),
                   border: Border.all(
-                    color: const Color.fromARGB(255, 25, 80, 80),
+                    color: const Color.fromARGB(255, 0, 53, 84),
                     width: 4.0,
                   ),
                 ),
               ),
-              const SizedBox(
-                height: 24,
-              ),
+              const SizedBox(height: 140),
               FutureBuilder(
                   future: parseResponse(),
                   builder: (context, snapshot) {
