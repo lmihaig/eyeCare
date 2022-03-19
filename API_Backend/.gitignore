@@ -8,3 +8,7 @@ __pycache__/
 # uploads:
 uploaded/**
 !uploaded/.gitkeep
+
+# processed:
+processed/**
+!processed/.gitkeep

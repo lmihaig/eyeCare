@@ -5,7 +5,7 @@ eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml
 
 
 
-def process(org, result):
+def highlight(org, result):
     frame = cv2.imread(org, 1)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
@@ -21,4 +21,4 @@ def process(org, result):
 
 
 if __name__ == "__main__":
-    process("Photo.jpg", 'newPhoto.jpg')
+    highlight("Photo.jpg", 'newPhoto.jpg')

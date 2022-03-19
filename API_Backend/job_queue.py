@@ -1,6 +1,7 @@
 import threading
 import os
 import time
+from procesare import highlight
 
 
 print()
@@ -43,7 +44,9 @@ def queue_function():
 
             #   TEMP
             job=job_queue.pop(0)
-            time.sleep(20)
+            # time.sleep(20)
+            jpg_name=f"job_{str(job.id)}.jpg"
+            highlight(f"uploaded/{jpg_name}", f"processed/{jpg_name}")
             job.isDone=True
             print("'finished'", job.id)
             #
