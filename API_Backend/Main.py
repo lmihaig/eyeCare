@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, send_file
-from job_queue import add_to_queue, get_status
+from job_queue import add_to_queue, get_status, get_last_completed
 app = Flask("eyeCare API Backend")
 
 
@@ -46,10 +46,14 @@ def api_get_result(job_id):
     if job_id.isnumeric():
         job_id = int(job_id)
     else:
-        return "WRONGEST"
+        # return "WRONGEST"
+        if(job_id=="last"):
+            return api_get_job(str(get_last_completed))
+        else:
+            return "WRONGEST"
 
     if get_status(job_id):
-        return send_file(f"processed/job_{str(job_id)}.jpg", mimetype='image/jpg')
+        return send_file(f"processed/job_{str(job_id)}.jpg", mimetype='image/jpg', max_age=1)
     else:
         return {
             "status": "PROCESSING"

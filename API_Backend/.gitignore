@@ -12,3 +12,5 @@ uploaded/**
 # processed:
 processed/**
 !processed/.gitkeep
+
+tests/**

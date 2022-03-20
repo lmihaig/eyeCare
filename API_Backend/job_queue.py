@@ -10,6 +10,9 @@ print()
 
 global last_id
 last_id=0
+global last_completed
+last_completed=0
+get_last_completed=lambda :last_completed
 
 job_queue=[]
 job_statuses={}
@@ -39,6 +42,7 @@ def get_info(job_id):
 
 def queue_function():
     print("Started queue thread")
+    global last_completed
     while True:
         if(len(job_queue) != 0):
 
@@ -48,6 +52,7 @@ def queue_function():
             jpg_name=f"job_{str(job.id)}.jpg"
             highlight(f"uploaded/{jpg_name}", f"processed/{jpg_name}")
             job.isDone=True
+            last_completed=job.id
             print("'finished'", job.id)
             #
         else:
