@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:file/memory.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-// import 'package:file/file.dart';
 
 void main() {
   runApp(const MyApp());
@@ -38,9 +36,10 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   File? image;
+  NetworkImage? imageprocessed;
   Map<String, dynamic>? responseBody;
-  Map<String, dynamic>? job_info;
-  Map<String, dynamic>? job_status;
+  Map<String, dynamic>? jobInfo;
+  Map<String, dynamic>? jobStatus;
 
   Future chooseImage(ImageSource source) async {
     try {
@@ -51,8 +50,8 @@ class _MainPageState extends State<MainPage> {
       final imageTemp = File(image.path);
       setState(() {
         responseBody = null;
-        job_info = null;
-        job_status = null;
+        jobInfo = null;
+        jobStatus = null;
         this.image = imageTemp;
       });
       // setState(() => this.image = imageTemp);
@@ -67,7 +66,7 @@ class _MainPageState extends State<MainPage> {
     var request = http.MultipartRequest("POST", uri);
     var client = http.Client();
 
-    // Map<String, String> headers = {"user": "muie_sima"};
+    // Map<String, String> headers = {"max-age": "1"};
     // request.headers.addAll(headers);
     // request.fields["parola"] = "sima_muie";
 
@@ -80,58 +79,58 @@ class _MainPageState extends State<MainPage> {
     print("Result: ${response.statusCode}");
     print("Body: ${response.body}");
 
-    job_info = jsonDecode(response.body);
-    print(job_info);
+    jobInfo = jsonDecode(response.body);
+    print(jobInfo);
 
     uri = Uri.parse('http://sima.zapto.org:8081/api/get_job/' +
-        job_info!['job_id'].toString());
+        jobInfo!['job_id'].toString());
 
-    print("9");
-
-    dynamic json_body;
+    dynamic jsonBody;
     do {
       await Future.delayed(const Duration(milliseconds: 50));
       response = await client.get(uri);
-      json_body = jsonDecode(response.body);
-    } while (json_body!['status'] != 'DONE');
+      jsonBody = jsonDecode(response.body);
+    } while (jsonBody!['status'] != 'DONE');
 
+    // uri = Uri.parse('http://sima.zapto.org:8081/api/get_result/' +
+    //     jobInfo!['job_id'].toString());
+
+    // Map<String, String> headers = {"max-age": "1"};
+
+    // JEGMANEALA V2.0, NU MA BATE PLZ  -Sima(CristiSima@git)
+    bool getOk;
     print("A");
-    uri = Uri.parse('http://sima.zapto.org:8081/api/get_result/' +
-        job_info!['job_id'].toString());
-    print("B");
-
-    // JEGMANEALA, NU MA BATE PLZ  -Sima(CristiSima@git)
-    bool get_ok;
+    NetworkImage? localNetImg;
     do {
       try {
-        response = await client.get(uri);
-        get_ok = true;
+        localNetImg = NetworkImage(
+            'http://sima.zapto.org:8008/api/get_result/' +
+                jobInfo!['job_id'].toString());
+        // local_net_img.resolve(createLocalImageConfiguration(context));
+        getOk = true;
       } catch (e) {
         print("Fail 1");
-        get_ok = false;
+        getOk = false;
       }
-    } while (!get_ok);
+    } while (!getOk);
+    print("B");
 
-    print("C");
-    print(this.image);
-    print(this.image?.lastAccessedSync().toString());
-    image = MemoryFileSystem().file('test.dart');
-    image.writeAsBytesSync(response.bodyBytes);
-    print("D");
+    // print(response.bodyBytes);
+    // image = MemoryFileSystem().file('test.dart');
+    // image.writeAsBytesSync(response.bodyBytes);
+
     setState(() {
-      job_status = json_body;
-      this.image = image;
+      jobStatus = jsonBody;
+      imageprocessed = localNetImg;
     });
-    print("E");
-    print(this.image?.lastAccessedSync().toString());
   }
 
   Future<String> parseResponse() async {
-    while (job_info == null) {
+    while (jobInfo == null) {
       await Future.delayed(const Duration(seconds: 1));
     }
     String parsedResponse = "";
-    for (String key in job_info!.keys) {
+    for (String key in jobInfo!.keys) {
       // parsedResponse +=  key + " Confidence: " + responseBody![key].toString() + "\n";
     }
     parsedResponse += "Possible affections:\nNone";
@@ -173,6 +172,14 @@ class _MainPageState extends State<MainPage> {
         ]),
       );
 
+  ImageProvider showImage() {
+    if (imageprocessed != null) {
+      return imageprocessed!;
+    } else {
+      return FileImage(image!);
+    }
+  }
+
   Widget fancyButton(
           {required String title,
           required IconData icon,
@@ -181,12 +188,17 @@ class _MainPageState extends State<MainPage> {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           shape: const StadiumBorder(),
-          maximumSize: const Size.fromHeight(64),
+          maximumSize: Size(MediaQuery.of(context).size.width * 0.77,
+              MediaQuery.of(context).size.height * 0.1),
           primary: const Color.fromARGB(255, 0, 53, 84),
           onPrimary: Colors.white,
           textStyle: const TextStyle(fontSize: 24),
         ),
         child: Row(
+          mainAxisAlignment:
+              MainAxisAlignment.center, //Center Row contents horizontally,
+          crossAxisAlignment:
+              CrossAxisAlignment.center, //Center Row contents vertically,
           children: [
             Icon(icon, size: 28),
             const SizedBox(width: 18),
@@ -198,21 +210,23 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 60, 175, 195),
+      backgroundColor: const Color.fromARGB(255, 0, 200, 255),
       body: Container(
         padding: const EdgeInsets.all(32),
         child: Column(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             if (image != null) ...[
-              const SizedBox(
-                height: 24,
-              ),
+              // SizedBox(
+              //   height: MediaQuery.of(context).size.height * 0.05,
+              // ),
               Container(
-                width: MediaQuery.of(context).size.width * 0.7,
-                height: MediaQuery.of(context).size.height * 0.35,
+                width: MediaQuery.of(context).size.width * 0.8,
+                height: MediaQuery.of(context).size.height * 0.5,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    image: FileImage(image!),
+                    image: showImage(),
                     fit: BoxFit.cover,
                   ),
                   borderRadius: const BorderRadius.all(Radius.circular(50.0)),
@@ -222,7 +236,6 @@ class _MainPageState extends State<MainPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 140),
               FutureBuilder(
                   future: parseResponse(),
                   builder: (context, snapshot) {
@@ -236,15 +249,18 @@ class _MainPageState extends State<MainPage> {
             ] else ...[
               const FlutterLogo(size: 300),
             ],
-            const Spacer(),
-            fancyButton(
-                title: "Take picture",
-                icon: Icons.camera_alt_outlined,
-                onPressed: () => chooseImage(ImageSource.camera)),
-            fancyButton(
-                title: "Upload from gallery",
-                icon: Icons.image_outlined,
-                onPressed: () => chooseImage(ImageSource.gallery))
+            Column(
+              children: [
+                fancyButton(
+                    title: "Take picture",
+                    icon: Icons.camera_alt_outlined,
+                    onPressed: () => chooseImage(ImageSource.camera)),
+                fancyButton(
+                    title: "Upload from gallery",
+                    icon: Icons.image_outlined,
+                    onPressed: () => chooseImage(ImageSource.gallery)),
+              ],
+            )
           ],
         ),
       ),
